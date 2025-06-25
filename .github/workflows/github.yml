@@ -1,4 +1,4 @@
-name: Mod Validation
+name: Mod Validation and Release
 
 on:
   push:
@@ -7,21 +7,44 @@ on:
   pull_request:
   workflow_dispatch:
 
-
 jobs:
   validate-json:
-    if: always()
     runs-on: ubuntu-24.04
     defaults:
       run:
         shell: bash
     steps:
-        - name: Checkout repository
-          uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-        - name: Install jstyleson
-          run: sudo apt install python3-jstyleson
+      - name: Install jstyleson
+        run: sudo apt install python3-jstyleson
 
-        - name: Validate JSON
-          run: python3 .github/validate_json.py
+      - name: Validate JSON
+        run: python3 .github/validate_json.py
 
+  release-on-merge:
+    # Only run when a PR is merged into a vcmi-* branch
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.base.ref, 'vcmi-')
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+
+      - name: Create ZIP archive
+        run: |
+          zip -r mod.zip * .[^.]*
+
+      - name: Create or update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.pull_request.base.ref }}
+          name: "Mod Release (${{ github.event.pull_request.base.ref }})"
+          files: mod.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
