@@ -2,13 +2,18 @@
 """Install dependencies for a VCMI mod from the vcmi-mods-repository."""
 
 import json
-import os
 import sys
 import urllib.request
 import zipfile
 import tempfile
 from pathlib import Path
+import jstyleson
 
+
+def load_vcmi_json(path: Path):
+    """Load VCMI JSON files, which may contain comments and trailing commas."""
+    with open(path, encoding="utf-8") as f:
+        return jstyleson.load(f)
 
 def find_mod_json_files(root: Path) -> list:
     """Find mod.json in root and in Mods/*/mod.json (case-insensitive)."""
@@ -29,8 +34,7 @@ def find_mod_json_files(root: Path) -> list:
 def collect_dependencies(root: Path) -> set:
     deps = set()
     for mod_file in find_mod_json_files(root):
-        with open(mod_file) as f:
-            data = json.load(f)
+        data = load_vcmi_json(mod_file)
         for dep in data.get("depends", []):
             deps.add(dep.split(".")[0])
     return deps
