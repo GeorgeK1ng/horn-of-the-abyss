@@ -26,7 +26,7 @@ jobs:
         run: sudo apt update
 
       - name: Install VCMI
-        run: sudo apt install vcmi
+        run: sudo apt install vcmi python3-jstyleson
         
       - name: Install H3 Data Placeholder
         run: |
